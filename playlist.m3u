@@ -1,0 +1,11 @@
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://i.imgur.com/8zP4H1L.png" group-title="News",ABP News
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/J5MZy6x.png" group-title="News",Aaj Tak
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/qk1j6lD.png" group-title="Entertainment",DD National
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/2pT1r9Z.png" group-title="Entertainment",DD News
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/7y6vG2p.png" group-title="Movies",B4U Movies
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
