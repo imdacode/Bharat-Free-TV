@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bharat Free TV</string>
+    <string name="channels">Channels</string>
+    <string name="channel_list_description">Available TV channels</string>
+    <string name="loading_channel">Loading %1$s…</string>
+    <string name="no_channels">No channels were found in the playlist.</string>
+    <string name="playlist_error">The channel list could not be loaded.</string>
+    <string name="playback_error">This channel is currently unavailable. Please try another one.</string>
+</resources>

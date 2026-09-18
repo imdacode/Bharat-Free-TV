@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#080C10</color>
+    <color name="panel">#111820</color>
+    <color name="channel_idle">#1A2530</color>
+    <color name="selected">#31546E</color>
+    <color name="accent">#E76F2E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B8C3CC</color>
+</resources>
