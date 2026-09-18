@@ -1,1 +1,3 @@
-# Project-specific ProGuard rules can be added here when minification is enabled.
+# LibVLC uses JNI to reach its Java bindings.
+-keep class org.videolan.libvlc.** { *; }
+-keep class org.videolan.libvlc.util.** { *; }

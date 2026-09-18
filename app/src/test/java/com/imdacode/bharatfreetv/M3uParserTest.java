@@ -10,18 +10,35 @@ import java.util.List;
 
 public final class M3uParserTest {
     @Test
-    public void parsesExtendedMetadataAndStreamUrl() throws Exception {
+    public void parsesMetadataCategoryNumberAndQuality() throws Exception {
         String playlist = "#EXTM3U\n"
-                + "#EXTINF:-1 tvg-logo=\"logo.png\" group-title=\"News\",Aaj Tak\n"
+                + "#EXTINF:-1 tvg-chno=\"104\" tvg-logo=\"logo.png\" "
+                + "group-title=\"Hindi News\" tvg-quality=\"hd\",Bharat 24\n"
                 + "https://example.com/live.m3u8\n";
 
         List<Channel> channels = M3uParser.parse(new StringReader(playlist));
 
         assertEquals(1, channels.size());
-        assertEquals("Aaj Tak", channels.get(0).getName());
-        assertEquals("News", channels.get(0).getGroup());
-        assertEquals("logo.png", channels.get(0).getLogoUrl());
-        assertEquals("https://example.com/live.m3u8", channels.get(0).getStreamUrl());
+        Channel channel = channels.get(0);
+        assertEquals(104, channel.getNumber());
+        assertEquals("Bharat 24", channel.getName());
+        assertEquals(CategoryNormalizer.NEWS, channel.getCategory());
+        assertEquals("logo.png", channel.getLogoUrl());
+        assertEquals("HD", channel.getQuality());
+        assertEquals("https://example.com/live.m3u8", channel.getStreamUrl());
+    }
+
+    @Test
+    public void supportsCommasInsideQuotedAttributes() throws Exception {
+        String playlist = "#EXTM3U\n"
+                + "#EXTINF:-1 group-title=\"Movies, Hindi\",Cinema HD\n"
+                + "https://example.com/movie.m3u8\n";
+
+        Channel channel = M3uParser.parse(new StringReader(playlist)).get(0);
+
+        assertEquals("Cinema HD", channel.getName());
+        assertEquals(CategoryNormalizer.MOVIES, channel.getCategory());
+        assertEquals("HD", channel.getQuality());
     }
 
     @Test
@@ -36,13 +53,14 @@ public final class M3uParserTest {
 
         assertEquals(1, channels.size());
         assertEquals("Working Channel", channels.get(0).getName());
-        assertEquals("Other", channels.get(0).getGroup());
+        assertEquals(CategoryNormalizer.OTHER, channels.get(0).getCategory());
+        assertEquals(1, channels.get(0).getNumber());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void returnedChannelListIsImmutable() throws Exception {
         List<Channel> channels = M3uParser.parse(new StringReader("#EXTM3U\n"));
         assertTrue(channels.isEmpty());
-        channels.add(new Channel("Name", "Group", "", "https://example.com"));
+        channels.add(new Channel(1, "Name", "Other", "", "https://example.com", "SD"));
     }
 }
