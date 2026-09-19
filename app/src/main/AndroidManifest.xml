@@ -22,8 +22,12 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
+            android:exported="false" />
+        <activity
+            android:name=".SplashActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
             android:exported="true"
-            android:theme="@style/Theme.BharatFreeTV.Starting">
+            android:theme="@style/Theme.BharatFreeTV.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

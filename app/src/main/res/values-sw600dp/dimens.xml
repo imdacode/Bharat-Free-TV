@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="navigation_width">420dp</dimen>
     <dimen name="settings_padding">40dp</dimen>
 </resources>

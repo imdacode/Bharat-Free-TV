@@ -1,3 +1,1 @@
-# LibVLC uses JNI to reach its Java bindings.
--keep class org.videolan.libvlc.** { *; }
--keep class org.videolan.libvlc.util.** { *; }
+# Project-specific R8 rules can be added here when needed.

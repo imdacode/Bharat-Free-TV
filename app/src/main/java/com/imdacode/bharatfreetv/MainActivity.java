@@ -10,7 +10,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,67 +17,56 @@ import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
-import androidx.core.splashscreen.SplashScreen;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.OptIn;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.videolan.libvlc.util.VLCVideoLayout;
-
-import java.text.DateFormat;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
+@OptIn(markerClass = UnstableApi.class)
 public final class MainActivity extends ComponentActivity implements ChannelAdapter.Listener {
-    private static final int SETTINGS_REQUEST = 100;
-    private static final long WELCOME_DURATION_MILLIS = 2300L;
-    private static final long INFO_BAR_DURATION_MILLIS = 5000L;
-    private static final List<String> CATEGORIES = Arrays.asList(
-            CategoryNormalizer.ALL,
-            CategoryNormalizer.NEWS,
-            CategoryNormalizer.MOVIES,
-            CategoryNormalizer.ENTERTAINMENT,
-            CategoryNormalizer.SPORTS,
-            CategoryNormalizer.MUSIC,
-            CategoryNormalizer.REGIONAL,
-            CategoryNormalizer.FAVORITES);
+    private static final long INFO_BAR_DURATION_MILLIS = 4_000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable hideInfoBar = this::hideInfoBarNow;
-    private final Runnable updateClock = new Runnable() {
-        @Override
-        public void run() {
-            headerClock.setText(DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date()));
-            handler.postDelayed(this, 30_000L);
-        }
-    };
+    private final ActivityResultLauncher<Intent> settingsLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null
+                        && result.getData().getBooleanExtra(
+                        SettingsActivity.EXTRA_RELOAD_PLAYLIST, false)) {
+                    loadPlaylist();
+                }
+            });
 
     private AppPreferences preferences;
     private PlaylistRepository playlistRepository;
     private LogoLoader logoLoader;
-    private PlaybackEngine playbackEngine;
+    private ExoPlayer player;
     private ChannelAdapter channelAdapter;
     private List<Channel> allChannels = Collections.emptyList();
     private Channel currentChannel;
     private String activeCategory = CategoryNormalizer.ALL;
     private long playbackPosition;
-    private boolean started;
 
-    private VideoViewport videoViewport;
-    private PlayerView exoPlayerView;
-    private VLCVideoLayout vlcVideoView;
-    private View playerInputLayer;
-    private View welcomeOverlay;
+    private PlayerView playerView;
     private View navigationOverlay;
     private View infoBar;
-    private TextView statusView;
-    private TextView headerClock;
     private EditText searchInput;
     private LinearLayout categoryContainer;
     private RecyclerView channelList;
@@ -86,12 +74,11 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
     private TextView infoNumber;
     private ImageView infoLogo;
     private TextView infoName;
-    private TextView infoMeta;
-    private TextView infoStatus;
+    private TextView infoCategory;
+    private TextView infoQuality;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         enterImmersiveMode();
@@ -100,31 +87,30 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         playlistRepository = new PlaylistRepository(this, preferences);
         logoLoader = new LogoLoader();
         bindViews();
-        setupNavigation();
-        setupBackNavigation();
-
-        videoViewport.setAspectMode(preferences.getAspectRatio());
-        welcomeOverlay.setVisibility(View.VISIBLE);
-        handler.postDelayed(this::hideWelcome, WELCOME_DURATION_MILLIS);
+        configurePlayerSurface();
+        configureGuide();
+        configureBackNavigation();
         loadPlaylist();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        started = true;
-        initializePlaybackEngine();
+        initializePlayer();
         if (currentChannel != null) {
-            playbackEngine.play(currentChannel, playbackPosition);
+            startPlayback(currentChannel, playbackPosition);
         }
-        handler.post(updateClock);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        enterImmersiveMode();
     }
 
     @Override
     protected void onStop() {
-        started = false;
-        handler.removeCallbacks(updateClock);
-        releasePlaybackEngine();
+        releasePlayer();
         super.onStop();
     }
 
@@ -139,17 +125,26 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (!isMenuVisible() && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER
-                || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_MENU)) {
+                || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_MENU
+                || keyCode == KeyEvent.KEYCODE_DPAD_LEFT)) {
             showMenu();
             return true;
         }
+        if (isMenuVisible() && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            hideMenu();
+            playerView.requestFocus();
+            return true;
+        }
         if (!isMenuVisible() && (keyCode == KeyEvent.KEYCODE_CHANNEL_UP
-                || keyCode == KeyEvent.KEYCODE_PAGE_UP || keyCode == KeyEvent.KEYCODE_DPAD_UP)) {
+                || keyCode == KeyEvent.KEYCODE_PAGE_UP
+                || keyCode == KeyEvent.KEYCODE_DPAD_UP)) {
             changeChannel(-1);
             return true;
         }
         if (!isMenuVisible() && (keyCode == KeyEvent.KEYCODE_CHANNEL_DOWN
-                || keyCode == KeyEvent.KEYCODE_PAGE_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_DOWN)) {
+                || keyCode == KeyEvent.KEYCODE_PAGE_DOWN
+                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN)) {
             changeChannel(1);
             return true;
         }
@@ -160,7 +155,7 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
     public void onChannelSelected(Channel channel) {
         playChannel(channel, 0L);
         hideMenu();
-        playerInputLayer.requestFocus();
+        playerView.requestFocus();
     }
 
     @Override
@@ -169,28 +164,10 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         applyFilters();
     }
 
-    @Override
-    @SuppressWarnings("deprecation")
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SETTINGS_REQUEST && resultCode == RESULT_OK) {
-            videoViewport.setAspectMode(preferences.getAspectRatio());
-            if (data != null && data.getBooleanExtra(SettingsActivity.EXTRA_RELOAD_PLAYLIST, false)) {
-                loadPlaylist();
-            }
-        }
-    }
-
     private void bindViews() {
-        videoViewport = findViewById(R.id.video_viewport);
-        exoPlayerView = findViewById(R.id.exo_player_view);
-        vlcVideoView = findViewById(R.id.vlc_player_view);
-        playerInputLayer = findViewById(R.id.player_input_layer);
-        welcomeOverlay = findViewById(R.id.welcome_overlay);
+        playerView = findViewById(R.id.exo_player_view);
         navigationOverlay = findViewById(R.id.navigation_overlay);
         infoBar = findViewById(R.id.info_bar);
-        statusView = findViewById(R.id.status);
-        headerClock = findViewById(R.id.header_clock);
         searchInput = findViewById(R.id.search_input);
         categoryContainer = findViewById(R.id.category_container);
         channelList = findViewById(R.id.channel_list);
@@ -198,23 +175,21 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         infoNumber = findViewById(R.id.info_channel_number);
         infoLogo = findViewById(R.id.info_channel_logo);
         infoName = findViewById(R.id.info_channel_name);
-        infoMeta = findViewById(R.id.info_channel_meta);
-        infoStatus = findViewById(R.id.info_playing_status);
+        infoCategory = findViewById(R.id.info_channel_category);
+        infoQuality = findViewById(R.id.info_quality_badge);
     }
 
-    private void setupNavigation() {
+    private void configurePlayerSurface() {
+        playerView.setUseController(false);
+        playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+        playerView.setOnClickListener(view -> toggleMenu());
+        playerView.requestFocus();
+    }
+
+    private void configureGuide() {
         channelAdapter = new ChannelAdapter(this, logoLoader);
         channelList.setLayoutManager(new LinearLayoutManager(this));
         channelList.setAdapter(channelAdapter);
-
-        for (String category : CATEGORIES) {
-            Button button = (Button) getLayoutInflater().inflate(
-                    R.layout.item_category, categoryContainer, false);
-            button.setText(category);
-            button.setSelected(CategoryNormalizer.ALL.equals(category));
-            button.setOnClickListener(view -> selectCategory(category));
-            categoryContainer.addView(button);
-        }
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -231,22 +206,19 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
             }
         });
 
-        playerInputLayer.setOnClickListener(view -> showMenu());
-        findViewById(R.id.menu_button).setOnClickListener(view -> toggleMenu());
         findViewById(R.id.settings_button).setOnClickListener(view -> {
             hideMenu();
-            startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
+            settingsLauncher.launch(new Intent(this, SettingsActivity.class));
         });
-        playerInputLayer.requestFocus();
     }
 
-    private void setupBackNavigation() {
+    private void configureBackNavigation() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (isMenuVisible()) {
                     hideMenu();
-                    playerInputLayer.requestFocus();
+                    playerView.requestFocus();
                 } else {
                     finish();
                 }
@@ -254,87 +226,67 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         });
     }
 
+    private void initializePlayer() {
+        if (player != null) {
+            return;
+        }
+        player = new ExoPlayer.Builder(this).build();
+        playerView.setPlayer(player);
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                if (isPlaying) {
+                    scheduleInfoBarHide();
+                }
+            }
+
+            @Override
+            public void onPlayerError(PlaybackException error) {
+                handler.removeCallbacks(hideInfoBar);
+                Toast.makeText(MainActivity.this, R.string.playback_error,
+                        Toast.LENGTH_LONG).show();
+                showMenu();
+            }
+        });
+    }
+
+    private void releasePlayer() {
+        if (player == null) {
+            return;
+        }
+        playbackPosition = player.getCurrentPosition();
+        playerView.setPlayer(null);
+        player.release();
+        player = null;
+    }
+
     private void loadPlaylist() {
-        showStatus(getString(R.string.loading_playlist));
         playlistRepository.load(new PlaylistRepository.Callback() {
             @Override
             public void onLoaded(List<Channel> channels, boolean fromCache) {
                 allChannels = channels;
-                hideStatus();
+                rebuildCategoryTabs();
                 applyFilters();
                 if (fromCache) {
                     Toast.makeText(MainActivity.this, R.string.using_cached_playlist,
                             Toast.LENGTH_LONG).show();
                 }
                 if (!allChannels.isEmpty()) {
-                    Channel reloadedChannel = findByStreamUrl(currentChannel);
-                    playChannel(reloadedChannel == null ? allChannels.get(0) : reloadedChannel,
-                            reloadedChannel == null ? 0L : playbackPosition);
+                    Channel reloaded = findByStreamUrl(currentChannel);
+                    playChannel(reloaded == null ? allChannels.get(0) : reloaded,
+                            reloaded == null ? 0L : playbackPosition);
                 }
             }
 
             @Override
             public void onError(String message) {
                 allChannels = Collections.emptyList();
+                rebuildCategoryTabs();
                 applyFilters();
-                showStatus(message);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 showMenu();
             }
         });
-    }
-
-    private void initializePlaybackEngine() {
-        if (playbackEngine != null) {
-            return;
-        }
-        String aspectMode = preferences.getAspectRatio();
-        PlaybackEngine.Callback callback = new PlaybackEngine.Callback() {
-            @Override
-            public void onBuffering() {
-                if (currentChannel != null) {
-                    infoStatus.setText(R.string.buffering);
-                    showStatus(getString(R.string.loading_channel, currentChannel.getName()));
-                }
-            }
-
-            @Override
-            public void onPlaying() {
-                infoStatus.setText(R.string.now_playing);
-                hideStatus();
-            }
-
-            @Override
-            public void onError() {
-                infoStatus.setText(R.string.unavailable);
-                showStatus(getString(R.string.playback_error));
-                showMenu();
-            }
-        };
-
-        if (AppPreferences.ENGINE_VLC.equals(preferences.getPlayerEngine())) {
-            try {
-                exoPlayerView.setVisibility(View.GONE);
-                vlcVideoView.setVisibility(View.VISIBLE);
-                playbackEngine = new VlcPlaybackEngine(this, vlcVideoView, aspectMode, callback);
-            } catch (RuntimeException | LinkageError error) {
-                preferences.setPlayerEngine(AppPreferences.ENGINE_EXOPLAYER);
-                Toast.makeText(this, R.string.vlc_start_error, Toast.LENGTH_LONG).show();
-            }
-        }
-        if (playbackEngine == null) {
-            vlcVideoView.setVisibility(View.GONE);
-            exoPlayerView.setVisibility(View.VISIBLE);
-            playbackEngine = new ExoPlaybackEngine(this, exoPlayerView, aspectMode, callback);
-        }
-    }
-
-    private void releasePlaybackEngine() {
-        if (playbackEngine == null) {
-            return;
-        }
-        playbackPosition = playbackEngine.getCurrentPosition();
-        playbackEngine.release();
-        playbackEngine = null;
     }
 
     private void playChannel(Channel channel, long positionMillis) {
@@ -342,11 +294,18 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         playbackPosition = positionMillis;
         channelAdapter.setSelectedChannel(channel);
         showInfoBar(channel);
-        showStatus(getString(R.string.loading_channel, channel.getName()));
-        if (started) {
-            initializePlaybackEngine();
-            playbackEngine.play(channel, positionMillis);
+        if (player != null) {
+            startPlayback(channel, positionMillis);
         }
+    }
+
+    private void startPlayback(Channel channel, long positionMillis) {
+        player.setMediaItem(MediaItem.fromUri(channel.getStreamUrl()));
+        player.prepare();
+        if (positionMillis > 0L) {
+            player.seekTo(positionMillis);
+        }
+        player.play();
     }
 
     private void changeChannel(int direction) {
@@ -354,7 +313,7 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
             showMenu();
             return;
         }
-        int currentIndex = currentChannel == null ? 0 : allChannels.indexOf(currentChannel);
+        int currentIndex = currentChannel == null ? -1 : allChannels.indexOf(currentChannel);
         int nextIndex = (currentIndex + direction + allChannels.size()) % allChannels.size();
         playChannel(allChannels.get(nextIndex), 0L);
     }
@@ -371,11 +330,33 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
         return null;
     }
 
+    private void rebuildCategoryTabs() {
+        Set<String> categories = new LinkedHashSet<>();
+        categories.add(CategoryNormalizer.ALL);
+        for (Channel channel : allChannels) {
+            categories.add(channel.getCategory());
+        }
+        categories.add(CategoryNormalizer.FAVORITES);
+        if (!categories.contains(activeCategory)) {
+            activeCategory = CategoryNormalizer.ALL;
+        }
+
+        categoryContainer.removeAllViews();
+        for (String category : categories) {
+            Button button = (Button) getLayoutInflater().inflate(
+                    R.layout.item_category, categoryContainer, false);
+            button.setText(category);
+            button.setSelected(category.equals(activeCategory));
+            button.setOnClickListener(view -> selectCategory(category));
+            categoryContainer.addView(button);
+        }
+    }
+
     private void selectCategory(String category) {
         activeCategory = category;
         for (int index = 0; index < categoryContainer.getChildCount(); index++) {
-            View button = categoryContainer.getChildAt(index);
-            button.setSelected(category.contentEquals(((Button) button).getText()));
+            Button button = (Button) categoryContainer.getChildAt(index);
+            button.setSelected(category.contentEquals(button.getText()));
         }
         applyFilters();
     }
@@ -395,14 +376,18 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
 
     private void showInfoBar(Channel channel) {
         handler.removeCallbacks(hideInfoBar);
+        infoBar.animate().cancel();
         infoNumber.setText(String.format(Locale.US, "%03d", channel.getNumber()));
         infoName.setText(channel.getName());
-        infoMeta.setText(getString(R.string.info_meta, channel.getCategory(), channel.getQuality(),
-                AppPreferences.ENGINE_VLC.equals(preferences.getPlayerEngine()) ? "VLC" : "ExoPlayer"));
-        infoStatus.setText(R.string.buffering);
+        infoCategory.setText(getString(R.string.info_category, channel.getCategory()));
+        infoQuality.setText(channel.getQuality());
         logoLoader.load(channel.getLogoUrl(), infoLogo);
         infoBar.setAlpha(1f);
         infoBar.setVisibility(View.VISIBLE);
+    }
+
+    private void scheduleInfoBarHide() {
+        handler.removeCallbacks(hideInfoBar);
         handler.postDelayed(hideInfoBar, INFO_BAR_DURATION_MILLIS);
     }
 
@@ -412,17 +397,21 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
     }
 
     private void showMenu() {
+        navigationOverlay.animate().cancel();
         navigationOverlay.setAlpha(0f);
         navigationOverlay.setVisibility(View.VISIBLE);
         navigationOverlay.animate().alpha(1f).setDuration(180L).start();
-        if (channelAdapter.getItemCount() > 0) {
-            channelList.requestFocus();
-        } else {
-            findViewById(R.id.settings_button).requestFocus();
-        }
+        channelList.post(() -> {
+            if (channelAdapter.getItemCount() > 0) {
+                channelList.requestFocus();
+            } else {
+                findViewById(R.id.settings_button).requestFocus();
+            }
+        });
     }
 
     private void hideMenu() {
+        navigationOverlay.animate().cancel();
         navigationOverlay.animate().alpha(0f).setDuration(150L)
                 .withEndAction(() -> navigationOverlay.setVisibility(View.GONE)).start();
     }
@@ -437,20 +426,6 @@ public final class MainActivity extends ComponentActivity implements ChannelAdap
 
     private boolean isMenuVisible() {
         return navigationOverlay.getVisibility() == View.VISIBLE;
-    }
-
-    private void hideWelcome() {
-        welcomeOverlay.animate().alpha(0f).setDuration(350L)
-                .withEndAction(() -> welcomeOverlay.setVisibility(View.GONE)).start();
-    }
-
-    private void showStatus(String message) {
-        statusView.setText(message);
-        statusView.setVisibility(View.VISIBLE);
-    }
-
-    private void hideStatus() {
-        statusView.setVisibility(View.GONE);
     }
 
     private void enterImmersiveMode() {

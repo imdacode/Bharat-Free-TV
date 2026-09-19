@@ -91,85 +91,15 @@
                 android:textColorHint="@color/text_secondary" />
         </LinearLayout>
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:background="@drawable/settings_card_background"
-            android:orientation="vertical"
-            android:padding="18dp">
-
-            <TextView
-                style="@style/SettingsSectionTitle"
-                android:text="@string/player_engine" />
-
-            <RadioGroup
-                android:id="@+id/engine_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/engine_exoplayer"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:focusable="true"
-                    android:text="@string/exoplayer"
-                    android:textColor="@color/text_primary" />
-
-                <RadioButton
-                    android:id="@+id/engine_vlc"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:focusable="true"
-                    android:text="@string/native_vlc"
-                    android:textColor="@color/text_primary" />
-            </RadioGroup>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:background="@drawable/settings_card_background"
-            android:orientation="vertical"
-            android:padding="18dp">
-
-            <TextView
-                style="@style/SettingsSectionTitle"
-                android:text="@string/aspect_ratio" />
-
-            <RadioGroup
-                android:id="@+id/aspect_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/aspect_auto"
-                    style="@style/SettingsRadioButton"
-                    android:text="@string/auto" />
-
-                <RadioButton
-                    android:id="@+id/aspect_16_9"
-                    style="@style/SettingsRadioButton"
-                    android:text="@string/aspect_16_9" />
-
-                <RadioButton
-                    android:id="@+id/aspect_4_3"
-                    style="@style/SettingsRadioButton"
-                    android:text="@string/aspect_4_3" />
-
-                <RadioButton
-                    android:id="@+id/aspect_stretch"
-                    style="@style/SettingsRadioButton"
-                    android:text="@string/stretch" />
-            </RadioGroup>
-        </LinearLayout>
+            android:padding="18dp"
+            android:text="@string/fixed_player_help"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/save_settings"

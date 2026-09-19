@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="background">#02060C</color>
-    <color name="navy">#071526</color>
     <color name="panel">#101D2B</color>
     <color name="channel_idle">#2A132437</color>
     <color name="selected">#CC1A4D72</color>

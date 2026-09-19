@@ -1,18 +1,18 @@
 # Bharat Free TV
 
 Bharat Free TV is a DTH-style IPTV player for Android phones, tablets, and TV
-boxes. It loads a user-supplied M3U, M3U8, or JSON channel guide and can play
-streams with either AndroidX Media3 (ExoPlayer) or embedded native VLC.
+boxes. It loads a user-supplied M3U, M3U8, or JSON channel guide and plays
+streams with AndroidX Media3 ExoPlayer.
 
 ## Features
 
-- Branded splash and fullscreen, zoomed video by default
-- Semi-transparent DTH guide and channel information overlays
+- Dedicated 2.5-second branded splash activity
+- Full-window Media3 player using fill resize mode
+- Fixed-width semi-transparent DTH guide over the playing video
+- Four-second channel information banner with logo, category, and quality
 - Automatic News, Movies, Entertainment, Sports, Music, and Regional categories
 - Search, channel numbers, quality labels, remote logos, and persistent favorites
 - Remote playlist caching with an offline fallback
-- ExoPlayer and native VLC playback engines
-- Auto/zoom, 16:9, 4:3, and stretch aspect controls
 - Touch, keyboard, and Android TV D-pad navigation
 
 ## Build

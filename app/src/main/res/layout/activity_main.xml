@@ -1,148 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:keepScreenOn="true">
+    android:keepScreenOn="true"
+    tools:ignore="MergeRootFrame">
 
-    <com.imdacode.bharatfreetv.VideoViewport
-        android:id="@+id/video_viewport"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <androidx.media3.ui.PlayerView
-            android:id="@+id/exo_player_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/background"
-            android:keepScreenOn="true"
-            android:visibility="visible" />
-
-        <org.videolan.libvlc.util.VLCVideoLayout
-            android:id="@+id/vlc_player_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/background"
-            android:visibility="gone" />
-    </com.imdacode.bharatfreetv.VideoViewport>
-
-    <View
-        android:id="@+id/player_input_layer"
+    <!-- Layer 1: the only playback surface. It always fills the complete window. -->
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/exo_player_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#000000"
         android:clickable="true"
-        android:contentDescription="@string/open_channel_menu"
-        android:focusable="true" />
+        android:contentDescription="@string/toggle_channel_menu"
+        android:focusable="true"
+        android:keepScreenOn="true"
+        app:resize_mode="fill"
+        app:show_buffering="when_playing"
+        app:use_controller="false" />
 
-    <LinearLayout
-        android:id="@+id/header"
-        android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:layout_gravity="top"
-        android:background="@drawable/header_background"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingEnd="12dp">
-
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/app_logo_description"
-            android:src="@drawable/logo_mark" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tagline_short"
-                android:textColor="@color/saffron"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/header_clock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <ImageButton
-            android:id="@+id/menu_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/icon_button_background"
-            android:contentDescription="@string/open_channel_menu"
-            android:focusable="true"
-            android:padding="12dp"
-            android:src="@drawable/ic_menu"
-            android:tint="@color/text_primary" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:background="@drawable/status_background"
-        android:gravity="center"
-        android:maxWidth="420dp"
-        android:paddingStart="24dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="16dp"
-        android:textColor="@color/text_primary"
-        android:textSize="18sp"
-        android:visibility="gone" />
-
+    <!-- Layer 2: DTH guide over the video; it never changes the player bounds. -->
     <LinearLayout
         android:id="@+id/navigation_overlay"
-        android:layout_width="@dimen/navigation_width"
+        android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@drawable/navigation_background"
+        android:background="#CC111827"
         android:elevation="12dp"
         android:orientation="vertical"
-        android:paddingStart="18dp"
-        android:paddingTop="76dp"
-        android:paddingEnd="18dp"
+        android:paddingStart="16dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="16dp"
         android:visibility="gone">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/live_channels"
-            android:textColor="@color/text_primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:contentDescription="@string/app_logo_description"
+                android:src="@drawable/logo_mark" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="@color/text_primary"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tagline_short"
+                    android:textColor="@color/saffron"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
 
         <EditText
             android:id="@+id/search_input"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/search_background"
             android:drawableStart="@drawable/ic_search"
             android:drawablePadding="8dp"
@@ -157,6 +93,7 @@
             android:textColorHint="@color/text_secondary" />
 
         <HorizontalScrollView
+            android:id="@+id/category_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -177,10 +114,10 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:padding="20dp"
+            android:padding="18dp"
             android:text="@string/no_matching_channels"
             android:textColor="@color/text_secondary"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -196,7 +133,7 @@
         <Button
             android:id="@+id/settings_button"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="50dp"
             android:background="@drawable/primary_button_background"
             android:drawableStart="@drawable/ic_settings"
             android:drawablePadding="8dp"
@@ -205,47 +142,47 @@
             android:text="@string/settings"
             android:textAllCaps="false"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Layer 3: channel information floats above playback at the bottom. -->
     <LinearLayout
         android:id="@+id/info_bar"
         android:layout_width="match_parent"
-        android:layout_height="112dp"
+        android:layout_height="108dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/info_bar_background"
-        android:elevation="10dp"
+        android:background="#E6000000"
+        android:elevation="16dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/info_channel_number"
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@color/saffron"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
         <ImageView
             android:id="@+id/info_channel_logo"
             android:layout_width="68dp"
             android:layout_height="68dp"
-            android:layout_marginStart="12dp"
             android:background="@drawable/logo_tile_background"
             android:contentDescription="@string/channel_logo_description"
             android:padding="8dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_channel_placeholder" />
 
+        <TextView
+            android:id="@+id/info_channel_number"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:gravity="center"
+            android:textColor="@color/saffron"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -260,71 +197,27 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/info_channel_meta"
+                android:id="@+id/info_channel_category"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:textSize="15sp" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/info_playing_status"
+            android:id="@+id/info_quality_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/status_pill_background"
-            android:paddingStart="14dp"
+            android:paddingStart="15dp"
             android:paddingTop="8dp"
-            android:paddingEnd="14dp"
+            android:paddingEnd="15dp"
             android:paddingBottom="8dp"
-            android:text="@string/buffering"
+            android:text="@string/hd_badge"
             android:textColor="@color/text_primary"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/welcome_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/welcome_background"
-        android:clickable="true"
-        android:elevation="30dp"
-        android:focusable="true"
-        android:gravity="center"
-        android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="132dp"
-                android:layout_height="132dp"
-                android:contentDescription="@string/app_logo_description"
-                android:src="@drawable/logo_mark" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/app_name"
-                android:textColor="@color/text_primary"
-                android:textSize="36sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/tagline"
-                android:textColor="@color/saffron"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <ProgressBar
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="220dp"
-                android:layout_height="4dp"
-                android:layout_marginTop="28dp"
-                android:indeterminate="true"
-                android:indeterminateTint="@color/saffron" />
     </LinearLayout>
 
 </FrameLayout>

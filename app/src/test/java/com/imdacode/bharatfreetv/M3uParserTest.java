@@ -42,6 +42,23 @@ public final class M3uParserTest {
     }
 
     @Test
+    public void extractsGroupTitleAndExtGrpForDynamicCategories() throws Exception {
+        String playlist = "#EXTM3U\n"
+                + "#EXTINF:-1 group-title='Sports',Stadium One\n"
+                + "https://example.com/sports.m3u8\n"
+                + "#EXTINF:-1 tvg-name=Local_Channel,\n"
+                + "#EXTGRP:Regional\n"
+                + "https://example.com/regional.m3u8\n";
+
+        List<Channel> channels = M3uParser.parse(new StringReader(playlist));
+
+        assertEquals(2, channels.size());
+        assertEquals(CategoryNormalizer.SPORTS, channels.get(0).getCategory());
+        assertEquals("Local_Channel", channels.get(1).getName());
+        assertEquals(CategoryNormalizer.REGIONAL, channels.get(1).getCategory());
+    }
+
+    @Test
     public void ignoresCommentsAndIncompleteEntries() throws Exception {
         String playlist = "\uFEFF#EXTM3U\n"
                 + "# a comment\n"
