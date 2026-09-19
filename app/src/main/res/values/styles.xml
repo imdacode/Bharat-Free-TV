@@ -2,8 +2,33 @@
 <resources>
     <style name="Theme.BharatFreeTV" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/saffron</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowBackground">@color/background</item>
         <item name="android:windowFullscreen">true</item>
     </style>
+
+    <style name="Theme.BharatFreeTV.Splash" parent="Theme.BharatFreeTV">
+        <item name="android:windowBackground">@drawable/welcome_background</item>
+        <item name="android:windowDisablePreview">false</item>
+    </style>
+
+    <style name="SettingsSectionTitle" parent="android:style/TextAppearance.Material.Title">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsHint" parent="android:style/TextAppearance.Material.Body1">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
 </resources>

@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background">#080C10</color>
-    <color name="panel">#111820</color>
-    <color name="channel_idle">#1A2530</color>
-    <color name="selected">#31546E</color>
-    <color name="accent">#E76F2E</color>
+    <color name="background">#02060C</color>
+    <color name="panel">#101D2B</color>
+    <color name="channel_idle">#2A132437</color>
+    <color name="selected">#CC1A4D72</color>
+    <color name="accent">#FF7A1A</color>
+    <color name="saffron">#FF8C1A</color>
+    <color name="green">#22B573</color>
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#B8C3CC</color>
+    <color name="text_secondary">#B8C8D8</color>
+    <color name="outline">#47637D</color>
 </resources>

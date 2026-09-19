@@ -1,38 +1,54 @@
 # Bharat Free TV
 
-Bharat Free TV is a small Android app for browsing and playing the free HLS
-streams listed in [`playlist.m3u`](playlist.m3u). It supports phones, tablets,
-and Android TV remotes.
+Bharat Free TV is a DTH-style IPTV player for Android phones, tablets, and TV
+boxes. It loads a user-supplied M3U, M3U8, or JSON channel guide and plays
+streams with AndroidX Media3 ExoPlayer.
 
 ## Features
 
-- Parses the bundled extended M3U playlist at build time
-- Plays HLS streams with AndroidX Media3
-- Keyboard, touch, and D-pad friendly channel list
-- Restores the selected channel and playback position after backgrounding
-- Shows useful loading and playback error states
+- Dedicated 2.5-second branded splash activity
+- Full-window Media3 player using fill resize mode
+- Fixed-width semi-transparent DTH guide over the playing video
+- Four-second channel information banner with logo, category, and quality
+- Automatic News, Movies, Entertainment, Sports, Music, and Regional categories
+- Search, channel numbers, quality labels, remote logos, and persistent favorites
+- Remote playlist caching with an offline fallback
+- Touch, keyboard, and Android TV D-pad navigation
 
 ## Build
 
 The project requires JDK 17 and the Android SDK (API 35). The Gradle wrapper
-downloads the repository's pinned Gradle version automatically.
+downloads the repository's pinned and checksum-verified Gradle version.
 
 ```bash
-./gradlew testDebugUnitTest assembleDebug
+./gradlew testDebugUnitTest lintDebug assembleDebug assembleRelease
 ```
 
-The debug APK is written to
-`app/build/outputs/apk/debug/app-debug.apk`.
+The installable debug APK is written to
+`app/build/outputs/apk/debug/app-debug.apk`. The optimized release APK is
+written under `app/build/outputs/apk/release/` and must be signed with the
+publisher's production keystore before distribution.
 
-## Add or update channels
+## Configure a playlist
 
-Edit the root `playlist.m3u` file. Each channel needs an `#EXTINF` line followed
-by its stream URL:
+Open **Settings** in the channel guide and paste a direct HTTP(S) playlist URL.
+No demonstration channels are hardcoded or bundled. Extended M3U entries can
+include channel numbers, logos, categories, and quality:
 
 ```m3u
-#EXTINF:-1 group-title="News",Example News
+#EXTINF:-1 tvg-chno="101" tvg-logo="https://example.com/logo.png" group-title="News" quality="HD",Example News
 https://example.com/live/playlist.m3u8
 ```
 
-Gradle copies this file into the app during every build, so there is no second
-playlist copy to keep in sync.
+JSON playlists can be an array or a `{ "channels": [...] }` object. Supported
+field aliases include `name`/`title`, `url`/`streamUrl`/`stream_url`,
+`group`/`category`, `logo`/`logoUrl`, `number`/`channelNumber`, and `quality`.
+
+The root [`playlist.m3u`](playlist.m3u) is retained as an intentionally empty
+offline fallback and copied into the app during each build.
+
+## TV remote controls
+
+- **OK / Center / Menu:** open the channel guide
+- **Channel Up/Down or D-pad Up/Down:** change channels while the guide is closed
+- **Back:** close the guide, then exit the app
